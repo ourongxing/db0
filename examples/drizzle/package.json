@@ -6,8 +6,8 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.20.14",
-    "drizzle-orm": "^0.29.4",
+    "drizzle-orm": "^0.33.0",
     "jiti": "^1.21.0",
-    "db0": "latest"
+    "@ourongxing/db0": "latest"
   }
 }

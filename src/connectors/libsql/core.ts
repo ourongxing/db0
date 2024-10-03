@@ -1,50 +1,53 @@
-import type { Client, InStatement } from "@libsql/client";
+import { resolve, dirname } from "node:path";
+import { mkdirSync } from "node:fs";
+import Database from "libsql";
+
 import type { Connector, Statement } from "../../types";
 
-export type ConnectorOptions = {
-  getClient: () => Client;
+export interface ConnectorOptions {
+  cwd?: string;
+  path?: string;
   name?: string;
-};
+}
 
-export default function libSqlCoreConnector(opts: ConnectorOptions) {
-  function query(sql: InStatement) {
-    const client = opts.getClient();
-    return client.execute(sql);
-  }
+export default function sqliteConnector(opts: ConnectorOptions) {
+  let _db: Database.Database;
+  const getDB = () => {
+    if (_db) {
+      return _db;
+    }
+    const filePath = resolve(
+      opts.cwd || ".",
+      opts.path || `.data/${opts.name || "db"}.sqlite3`,
+    );
+    mkdirSync(dirname(filePath), { recursive: true });
+    _db = new Database(filePath);
+    return _db;
+  };
 
   return <Connector>{
-    name: opts.name || "libsql-core",
+    name: "sqlite",
     exec(sql: string) {
-      return query(sql);
+      return getDB().exec(sql);
     },
     prepare(sql: string) {
+      const _stmt = getDB().prepare(sql);
       const stmt = <Statement>{
-        _sql: sql,
-        _params: [],
         bind(...params) {
           if (params.length > 0) {
-            this._params = params;
+            _stmt.bind(...params);
           }
           return stmt;
         },
         all(...params) {
-          return query({ sql: this._sql, args: params || this._params }).then(
-            (r) => r.rows,
-          );
+          return Promise.resolve(_stmt.all(...params));
         },
         run(...params) {
-          return query({ sql: this._sql, args: params || this._params }).then(
-            (r) => ({
-              result: r,
-              rows: r.rows,
-            }),
-          );
+          const res = _stmt.run(...params);
+          return Promise.resolve({ success: res.changes > 0 });
         },
         get(...params) {
-          // TODO: Append limit?
-          return query({ sql: this._sql, args: params || this._params }).then(
-            (r) => r.rows[0],
-          );
+          return Promise.resolve(_stmt.get(...params));
         },
       };
       return stmt;
