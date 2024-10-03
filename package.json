@@ -1,5 +1,5 @@
 {
-  "name": "db0",
+  "name": "@ourongxing/db0",
   "version": "0.1.4",
   "description": "Lightweight SQL Connector",
   "repository": "unjs/db0",
