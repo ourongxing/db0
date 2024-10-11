@@ -1,6 +1,6 @@
 import { resolve, dirname } from "node:path";
 import { mkdirSync } from "node:fs";
-import Database from "better-sqlite3";
+import Database from "libsql";
 
 import type { Connector, Statement } from "../types";
 
